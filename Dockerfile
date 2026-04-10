@@ -5,7 +5,7 @@ WORKDIR /app
 
 # 复制构建所需文件：依赖声明、源码和静态前端资源。
 COPY Cargo.toml Cargo.toml
-COPY .cargo .cargo
+COPY Cargo.lock Cargo.lock
 COPY src src
 COPY public public
 

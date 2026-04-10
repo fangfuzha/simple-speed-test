@@ -1,0 +1,142 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "手动发布使用的版本标签（示例：v0.1.1）。不填则使用当前 ref 名称。"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-binaries:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            bins: speedtest-server
+            archive: tar.gz
+          - os: windows-latest
+            bins: speedtest-server speedtest-desktop
+            archive: zip
+          - os: macos-latest
+            bins: speedtest-server speedtest-desktop
+            archive: tar.gz
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          for bin in ${{ matrix.bins }}; do
+            cargo build --release --bin "$bin"
+          done
+
+      - name: Package binaries (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          TAG="${{ inputs.release_tag || github.ref_name }}"
+          OS_NAME="$(echo "${RUNNER_OS}" | tr '[:upper:]' '[:lower:]')"
+          for bin in ${{ matrix.bins }}; do
+            ARCHIVE_NAME="${bin}-${TAG}-${OS_NAME}.tar.gz"
+            tar -C target/release -czf "dist/${ARCHIVE_NAME}" "$bin"
+          done
+
+      - name: Package binaries (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          $tag = "${{ inputs.release_tag || github.ref_name }}"
+          foreach ($bin in "${{ matrix.bins }}".Split(" ")) {
+            $archive = "dist/$bin-$tag-windows.zip"
+            Compress-Archive -Path "target/release/$bin.exe" -DestinationPath $archive -Force
+          }
+
+      - name: Upload packaged binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}
+          path: dist/*
+
+  publish-release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-binaries
+
+    steps:
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          generate_release_notes: true
+          files: dist/*
+
+  publish-docker:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    needs: build-binaries
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/simple-speed-test
+          tags: |
+            type=raw,value=${{ inputs.release_tag || github.ref_name }}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
