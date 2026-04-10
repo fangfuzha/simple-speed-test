@@ -1,4 +1,4 @@
-# simple-speed-test（已归档）
+# simple-speed-test
 
 本项目已完成 Rust 化迁移并进入归档维护状态。
 
@@ -14,7 +14,32 @@
 - 服务端模式：cargo run --bin speedtest-server
 - 桌面端模式：cargo run --bin speedtest-desktop
 
+## Docker 使用
+
+- 运行最新镜像：
+
+```bash
+docker run --rm -p 3000:3000 ghcr.io/fangfuzha/simple-speed-test:latest
+```
+
+- 使用 Compose（请在项目根目录、即包含 `docker-compose.yml` 的目录下运行）：
+
+```bash
+docker compose up
+```
+
+- 本仓库 Docker 镜像默认运行的是服务端版本 `speedtest-server`，并监听 `0.0.0.0:3000`。
+- 如果需要自定义参数，参考 `docker-compose.yml` 中的 `SPEEDTEST_*` 环境变量，例如：
+
+```bash
+docker run --rm -p 3000:3000 \
+  -e SPEEDTEST_MODE=server \
+  -e SPEEDTEST_OPEN_BROWSER=false \
+  ghcr.io/fangfuzha/simple-speed-test:latest
+```
+
+- 镜像构建支持多架构平台：`linux/amd64` 和 `linux/arm64`。
+
 ## 说明
 
-- 本仓库已移除 Node.js 运行时残留（`server.js`、`package*.json`、`node_modules`）。
 - 设计说明见 DESIGN.md。
