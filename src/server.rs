@@ -13,6 +13,7 @@ use axum::{
 use bytes::Bytes;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use socket2::{Domain, Protocol, Socket, Type};
 use std::{
     net::{IpAddr, SocketAddr},
     sync::Arc,
@@ -141,7 +142,7 @@ pub async fn spawn_server(config: RuntimeConfig) -> Result<ServerHandle, std::io
     });
 
     let app = build_router(state);
-    let listener = TcpListener::bind(config.bind_addr).await?;
+    let listener = bind_listener(config.bind_addr).await?;
     let local_addr = listener.local_addr()?;
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
 
@@ -166,6 +167,22 @@ pub async fn spawn_server(config: RuntimeConfig) -> Result<ServerHandle, std::io
         local_addr,
         shutdown: Some(shutdown_tx),
     })
+}
+
+async fn bind_listener(addr: SocketAddr) -> Result<TcpListener, std::io::Error> {
+    match addr {
+        SocketAddr::V6(v6_addr) if v6_addr.ip().is_unspecified() => {
+            let socket = Socket::new(Domain::IPV6, Type::STREAM, Some(Protocol::TCP))?;
+            socket.set_reuse_address(true)?;
+            socket.set_only_v6(false)?;
+            socket.bind(&addr.into())?;
+            socket.listen(1024)?;
+            let std_listener: std::net::TcpListener = socket.into();
+            std_listener.set_nonblocking(true)?;
+            TcpListener::from_std(std_listener)
+        }
+        _ => TcpListener::bind(addr).await,
+    }
 }
 
 fn build_router(state: Arc<AppState>) -> Router {

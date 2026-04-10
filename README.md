@@ -28,7 +28,7 @@ docker run --rm -p 3000:3000 ghcr.io/fangfuzha/simple-speed-test:latest
 docker compose up
 ```
 
-- 本仓库 Docker 镜像默认运行的是服务端版本 `speedtest-server`，并监听 `0.0.0.0:3000`。
+- 本仓库 Docker 镜像默认运行的是服务端版本 `speedtest-server`，并监听 `[::]:3000`；在支持 dual-stack 的操作系统上可同时接受 IPv4 和 IPv6 访问。
 - 如果需要自定义参数，参考 `docker-compose.yml` 中的 `SPEEDTEST_*` 环境变量，例如：
 
 ```bash
