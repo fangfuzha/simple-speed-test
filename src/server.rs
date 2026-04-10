@@ -1,14 +1,14 @@
 use crate::{
-    config::{default_public_dir, Cli, RuntimeConfig},
+    config::{Cli, RuntimeConfig, default_public_dir},
     session::{SessionError, SessionManager},
 };
 use axum::{
+    Json, Router,
     body::Body,
     extract::{ConnectInfo, Query, State},
-    http::{header, HeaderMap, HeaderValue, StatusCode},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{Html, IntoResponse, Response},
     routing::{get, post},
-    Json, Router,
 };
 use bytes::Bytes;
 use clap::Parser;
@@ -351,6 +351,7 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>
     Ok(())
 }
 
+#[cfg(feature = "desktop")]
 pub async fn run_desktop() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let cli = Cli::parse();
     let public_dir = default_public_dir();

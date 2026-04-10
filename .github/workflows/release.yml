@@ -68,7 +68,11 @@ jobs:
         run: |
           set -euo pipefail
           for bin in ${{ matrix.bins }}; do
-            cargo build --release --bin "$bin"
+            if [[ "$bin" == "speedtest-desktop" ]]; then
+              cargo build --release --bin "$bin" --features desktop
+            else
+              cargo build --release --bin "$bin"
+            fi
           done
 
       - name: Package binaries (Linux/macOS)

@@ -3,6 +3,10 @@ name = "simple-speed-test"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = []
+desktop = ["tray-icon", "webbrowser", "rfd", "winit"]
+
 [dependencies]
 async-stream = "0.3"
 axum = { version = "0.8", features = ["macros"] }
@@ -14,7 +18,16 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
-tray-icon = "0.22"
-webbrowser = "1"
-rfd = "0.15"
-winit = "0.30"
+tray-icon = { version = "0.22", optional = true }
+webbrowser = { version = "1", optional = true }
+rfd = { version = "0.15", optional = true }
+winit = { version = "0.30", optional = true }
+
+[[bin]]
+name = "speedtest-server"
+path = "src/bin/speedtest-server.rs"
+
+[[bin]]
+name = "speedtest-desktop"
+path = "src/bin/speedtest-desktop.rs"
+required-features = ["desktop"]
