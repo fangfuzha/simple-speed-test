@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Speed Test</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111c;
+      --panel: rgba(12, 22, 36, 0.78);
+      --panel-strong: rgba(15, 27, 44, 0.96);
+      --text: #eaf2ff;
+      --muted: #9fb2c9;
+      --line: rgba(255, 255, 255, 0.1);
+      --accent: #38d6c8;
+      --accent-2: #8ea8ff;
+      --warn: #ffb86b;
+      --error: #ff7b7b;
+      --shadow: 0 32px 90px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(56, 214, 200, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(142, 168, 255, 0.18), transparent 24%),
+        linear-gradient(180deg, #04080f 0%, #08111c 45%, #04080f 100%);
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: radial-gradient(circle at center, black 45%, transparent 90%);
+      opacity: 0.25;
+    }
+
+    .wrap {
+      position: relative;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 20px 40px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-main {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      inset: auto -120px -120px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 214, 200, 0.24), transparent 68%);
+      filter: blur(2px);
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      font-size: 12px;
+      color: var(--accent-2);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 58px);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      max-width: 60ch;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+      margin: 16px 0 0;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .stat strong {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .hero-side {
+      padding: 20px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(56, 214, 200, 0.12);
+      border: 1px solid rgba(56, 214, 200, 0.24);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.58;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .primary {
+      color: #041019;
+      background: linear-gradient(135deg, var(--accent), #8fe6c4);
+      box-shadow: 0 14px 30px rgba(56, 214, 200, 0.2);
+    }
+
+    .ghost {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+    }
+
+    .card {
+      padding: 22px;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .progress {
+      display: grid;
+      gap: 14px;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .bar>span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 160ms ease;
+    }
+
+    .results {
+      display: grid;
+      gap: 12px;
+    }
+
+    .result {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .result .name {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .result .value {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .log {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+      max-height: 340px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .log-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #cfe0f5;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--warn);
+      box-shadow: 0 0 0 4px rgba(255, 184, 107, 0.14);
+    }
+
+    .dot.running {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(56, 214, 200, 0.16);
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 920px) {
+
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .meta-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .wrap {
+        padding-inline: 14px;
+      }
+
+      .hero-main,
+      .card {
+        padding: 18px;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="panel hero-main">
+        <div class="eyebrow">LOCAL / REMOTE / DOCKER READY</div>
+        <h1>快速测速网页</h1>
+        <p class="subtitle">
+          支持下载、上传、延迟、抖动和丢包测试。当前版本采用快速模式：通过 3 轮样本与短窗口采样，将完整测速控制在约 5 到 10 秒内。
+        </p>
+
+        <div class="controls">
+          <button class="primary" id="btnStart">开始测速</button>
+          <button class="ghost" id="btnReset">清空结果</button>
+        </div>
+
+        <div class="meta-grid">
+          <div class="stat"><span>节点</span><strong id="nodeName">-</strong></div>
+          <div class="stat"><span>模式</span><strong id="modeName">-</strong></div>
+          <div class="stat"><span>会话</span><strong id="sessionState">未启动</strong></div>
+          <div class="stat"><span>预计时长</span><strong id="estimatedTime">6-8s</strong></div>
+        </div>
+      </div>
+
+      <aside class="panel hero-side">
+        <div class="chip">UI keeps results in memory only</div>
+        <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">等待开始</span></div>
+        <div class="footer-note" id="planNote">
+          快速模式：6 次延迟探测，下载/上传各 3 轮，每轮 3 个并发 worker，单轮窗口约 900ms。
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <article class="panel card">
+        <h2 class="section-title">测速结果</h2>
+        <div class="progress">
+          <div class="bar"><span id="progressBar"></span></div>
+          <div class="results">
+            <div class="result"><span class="name">下载</span><span class="value" id="downloadValue">-</span></div>
+            <div class="result"><span class="name">上传</span><span class="value" id="uploadValue">-</span></div>
+            <div class="result"><span class="name">延迟</span><span class="value" id="pingValue">-</span></div>
+            <div class="result"><span class="name">抖动</span><span class="value" id="jitterValue">-</span></div>
+            <div class="result"><span class="name">丢包</span><span class="value" id="lossValue">-</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel card">
+        <h2 class="section-title">运行日志</h2>
+        <div class="log" id="log"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/speedtest.js"></script>
+</body>
+
+</html>

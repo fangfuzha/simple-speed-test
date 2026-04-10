@@ -1,0 +1,24 @@
+# 使用 Compose 管理 speedtest 服务，便于本地/服务器一键启动。
+services:
+  speedtest:
+    # 直接使用当前目录的 Dockerfile 构建镜像。
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # 固定容器名，便于日志查看和运维命令操作。
+    container_name: speedtest
+
+    # 容器异常退出后自动拉起。
+    restart: unless-stopped
+
+    # 宿主机 3000 映射到容器 3000。
+    ports:
+      - "3000:3000"
+
+    # 运行参数，覆盖 Dockerfile 中默认 ENV。
+    environment:
+      SPEEDTEST_BIND: 0.0.0.0:3000
+      SPEEDTEST_MODE: server
+      SPEEDTEST_OPEN_BROWSER: "false"
+      SPEEDTEST_AUTOSTART: "false"
