@@ -59,7 +59,8 @@ jobs:
             libxi-dev \
             libxinerama-dev \
             libxkbcommon-dev \
-            libwayland-dev
+            libwayland-dev \
+            libxdo-dev
 
       - name: Build binaries
         shell: bash
