@@ -51,7 +51,7 @@ pub struct Cli {
     #[arg(long, default_value_t = true)]
     pub open_browser: bool,
 
-    #[arg(long, default_value_t = true)]
+    #[arg(long, default_value_t = false)]
     pub autostart: bool,
 
     #[arg(long, default_value = "SpeedTest Node")]

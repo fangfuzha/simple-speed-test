@@ -1,8 +1,8 @@
 use crate::{config::RuntimeConfig, settings::DesktopSettings};
 use std::{fs, io};
 use tray_icon::{
-    menu::{CheckMenuItem, Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem, Submenu},
     Icon, TrayIcon, TrayIconBuilder, TrayIconEvent,
+    menu::{CheckMenuItem, Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem, Submenu},
 };
 use winit::{
     application::ApplicationHandler,

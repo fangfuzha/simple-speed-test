@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            bins: speedtest-server
+            bins: speedtest-server speedtest-desktop
             archive: tar.gz
           - os: windows-latest
             bins: speedtest-server speedtest-desktop
@@ -43,6 +43,9 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: swatinem/rust-cache@v2
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -144,7 +147,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Extract Docker metadata
         id: meta
@@ -162,5 +165,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

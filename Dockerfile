@@ -3,14 +3,17 @@
 FROM rust:1.94-slim AS builder
 WORKDIR /app
 
-# 复制构建所需文件：依赖声明、源码和静态前端资源。
+# 先复制依赖声明并预下载 crates，避免源码变更时重复拉取依赖。
 COPY Cargo.toml Cargo.toml
 COPY Cargo.lock Cargo.lock
+RUN cargo fetch --locked
+
+# 再复制源码和静态前端资源，源码变更只会影响最终编译层。
 COPY src src
 COPY public public
 
 # 仅构建服务端二进制，产出 release 版本用于生产镜像。
-RUN cargo build --release --bin speedtest-server
+RUN cargo build --locked --release --bin speedtest-server
 
 # -------- Stage 2: runtime image --------
 # 运行阶段使用更小的 Debian slim，减小镜像体积并降低攻击面。

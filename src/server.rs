@@ -344,8 +344,10 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>
     let public_dir = default_public_dir();
     let config = RuntimeConfig::from_cli(cli, public_dir);
 
-    let handle = spawn_server(config).await?;
-    info!("press Ctrl+C to stop");
+    let handle = spawn_server(config.clone()).await?;
+    let browser_url = config.browser_url(Some(handle.local_addr.port()));
+    info!("Server is running at {}", browser_url);
+    info!("Press Ctrl+C to stop the server.");
     tokio::signal::ctrl_c().await?;
     handle.stop();
     Ok(())
@@ -353,9 +355,11 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>
 
 #[cfg(feature = "desktop")]
 pub async fn run_desktop() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use std::io::ErrorKind;
+
     let cli = Cli::parse();
     let public_dir = default_public_dir();
-    let config = RuntimeConfig::from_cli(cli, public_dir);
+    let mut config = RuntimeConfig::from_cli(cli, public_dir);
 
     let mut settings = crate::settings::DesktopSettings::load().unwrap_or_default();
     if settings.autostart != config.autostart_enabled {
@@ -369,6 +373,37 @@ pub async fn run_desktop() -> Result<(), Box<dyn std::error::Error + Send + Sync
 
     let handle = match spawn_server(config.clone()).await {
         Ok(handle) => handle,
+        Err(err) if err.kind() == ErrorKind::AddrInUse => {
+            let original_port = config.bind_addr.port();
+            config.bind_addr.set_port(0);
+            let handle = match spawn_server(config.clone()).await {
+                Ok(handle) => {
+                    let message = format!(
+                        "端口 {} 已被占用，已自动切换到随机端口 {}。",
+                        original_port,
+                        handle.local_addr.port()
+                    );
+                    let _ = rfd::MessageDialog::new()
+                        .set_title("端口已占用")
+                        .set_description(&message)
+                        .set_buttons(rfd::MessageButtons::Ok)
+                        .set_level(rfd::MessageLevel::Info)
+                        .show();
+                    handle
+                }
+                Err(err) => {
+                    let message = format!("无法绑定端口 {}: {}", original_port, err);
+                    let _ = rfd::MessageDialog::new()
+                        .set_title("测速程序启动失败")
+                        .set_description(&message)
+                        .set_buttons(rfd::MessageButtons::Ok)
+                        .set_level(rfd::MessageLevel::Error)
+                        .show();
+                    return Err(err.into());
+                }
+            };
+            handle
+        }
         Err(err) => {
             let message = format!("无法绑定端口 {}: {}", config.bind_addr, err);
             let _ = rfd::MessageDialog::new()

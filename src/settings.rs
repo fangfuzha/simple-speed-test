@@ -10,7 +10,7 @@ pub struct DesktopSettings {
 impl Default for DesktopSettings {
     fn default() -> Self {
         Self {
-            autostart: true,
+            autostart: false,
             open_browser_on_start: true,
         }
     }
